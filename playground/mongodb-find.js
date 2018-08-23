@@ -9,6 +9,7 @@ const {MongoClient, ObjectID} = require('mongodb');
 const url = 'mongodb://localhost:27017';
 const dbName = 'TodoApp';
 
+
 MongoClient.connect(url, (err, client) => {
     /**
      * the callback function get fired after the connect will succeeded or failed.
