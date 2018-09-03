@@ -1,7 +1,8 @@
 const {ObjectId} = require('mongodb');
 
-var express = require('express');
-var bodyParser = require('body-parser');
+const _ = require('lodash');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
@@ -73,6 +74,46 @@ app.delete('/todos/:id', (req, res) => {
   })
 
 });
+
+app.patch('/todos/:id', (req, res) => {
+  var id = req.params.id;
+  /**
+   * - Someone can send any property along, that are not in the Todo
+   * items, or those properties can be sent that we don't want to update
+   * eg. 'completedAt' is going to be a property that gets updated, but 
+   * its not gona updated by user
+   * 
+   */
+  var body = _.pick(req.body, ['text', 'completed']);
+
+  if(!ObjectId.isValid(id)) {
+    res.status(404).send();
+  }
+
+  if(_.isBoolean(body.completed) && body.completed) {
+    /**
+     * - get time function returns javascript timestamp, this is number
+     * of miliseconds since midnight on Jan 1st 1970, 
+     * its just a regular number, value greater than 0 are miliseconds 
+     * from that moment forward. Value less then 0 are in the past
+     */
+    body.completedAt = new Date().getTime();
+  } else {
+    body.completed = false;
+    body.completedAt = null;
+  }
+
+  Todo.findByIdAndUpdate(id,{$set: body},{new:true}).then((todo) => {
+    if(!todo) {
+      res.status(404).send();
+    }
+    
+    res.sendStatus({todo});
+  }).catch((e) => {
+    res.status(404).send();
+  });
+});
+
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
