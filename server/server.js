@@ -92,7 +92,7 @@ app.patch('/todos/:id', (req, res) => {
 
   if(_.isBoolean(body.completed) && body.completed) {
     /**
-     * - get time function returns javascript timestamp, this is number
+     * - 'gettime' function returns javascript timestamp, this is number
      * of miliseconds since midnight on Jan 1st 1970, 
      * its just a regular number, value greater than 0 are miliseconds 
      * from that moment forward. Value less then 0 are in the past
@@ -114,6 +114,22 @@ app.patch('/todos/:id', (req, res) => {
   });
 });
 
+/***********************USER ROUTES*********************/
+
+// POST /users
+app.post('/users', (req, res) => {
+  var body = _.pick(req.body, ['email', 'password']);
+  var user = new User(body);
+
+  user.save().then(() => {
+    return user.generateAuthToken();
+  }).then((token) => {
+    //here we need to send token back as 'http response header'
+    res.header('x-auth', token).send(user);
+  }).catch((e) => {
+    res.status(400).send(e);
+  })
+});
 
 app.listen(port, () => {
   console.log(`Started up at port ${port}`);
