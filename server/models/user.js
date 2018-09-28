@@ -32,20 +32,6 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //'UserSchema.methods' is an object, on this object we can add any 
 //method we like
 
@@ -70,6 +56,25 @@ UserSchema.methods.generateAuthToken = function () {
 
   return user.save().then(() => {
     return token;
+  });
+
+}
+
+//everything you add on to 'statics' turn into Model method
+UserSchema.statics.findByToken = function (token) {
+  var User = this;
+  var decoded; 
+
+  try {
+    var decoded = jwt.verify(token, 'abc123');
+  } catch(e) {
+    return Promise.reject();
+  }
+
+  return User.findOne({
+    '_id': decoded._id,
+    'tokens.token': token,
+    'tokens.access': 'auth'
   });
 
 }
