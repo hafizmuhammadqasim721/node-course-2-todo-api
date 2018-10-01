@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 var UserSchema = new mongoose.Schema({
   email: {
@@ -32,8 +33,10 @@ var UserSchema = new mongoose.Schema({
   }]
 });
 
-//'UserSchema.methods' is an object, on this object we can add any 
-//method we like
+/**
+ * 'UserSchema.methods' is an object, on this object we can add any 
+ * method we like 
+ */
 
 UserSchema.methods.toJSON = function() {
   var user = this;
@@ -42,12 +45,17 @@ UserSchema.methods.toJSON = function() {
   return _.pick(userObject, ['_id','email']);
 }
 
-//we can also override a method, to update exactly how mongoose handles
-//certain things
+/**
+ * we can also override a method, to update exactly how mongoose 
+ * handles certain things 
+ */
 
-UserSchema.methods.generateAuthToken = function () {
-  //using regular old function instead of arrow function, since arrow
-  //function doesn't bind 'this' keyword
+ UserSchema.methods.generateAuthToken = function () {
+  /**
+   * using regular old function instead of arrow function, since arrow 
+   * function doesn't bind 'this' keyword
+   */
+  
   var user = this;
   var access = 'auth';
   var token = jwt.sign({_id:user._id.toHexString(), access}, 'abc123');
@@ -79,7 +87,21 @@ UserSchema.statics.findByToken = function (token) {
 
 }
 
-var User = mongoose.model('User', UserSchema );
+UserSchema.pre('save', function (next) {
+  var user = this;
 
+  if (user.isModified('password')) {
+    bcrypt.genSalt(10, (err, salt) => {
+      bcrypt.hash(user.password, salt, (err, hash) => {
+        user.password = hash;
+        next();
+      });
+    });
+  } else {
+    next();
+  }
+  
+});
+var User = mongoose.model('User', UserSchema );
 
 module.exports = {User}
